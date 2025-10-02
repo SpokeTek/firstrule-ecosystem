@@ -44,6 +44,155 @@ export type Database = {
         }
         Relationships: []
       }
+      commercial_releases: {
+        Row: {
+          artist_id: string | null
+          artist_name: string
+          created_at: string | null
+          distributors: Json | null
+          id: string
+          metadata: Json | null
+          openplay_release_id: string
+          release_date: string
+          status: string | null
+          title: string
+          total_revenue: number | null
+          total_streams: number | null
+          total_tracks: number | null
+          type: string
+          upc: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id?: string | null
+          artist_name: string
+          created_at?: string | null
+          distributors?: Json | null
+          id?: string
+          metadata?: Json | null
+          openplay_release_id: string
+          release_date: string
+          status?: string | null
+          title: string
+          total_revenue?: number | null
+          total_streams?: number | null
+          total_tracks?: number | null
+          type: string
+          upc?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string | null
+          artist_name?: string
+          created_at?: string | null
+          distributors?: Json | null
+          id?: string
+          metadata?: Json | null
+          openplay_release_id?: string
+          release_date?: string
+          status?: string | null
+          title?: string
+          total_revenue?: number | null
+          total_streams?: number | null
+          total_tracks?: number | null
+          type?: string
+          upc?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      commercial_tracks: {
+        Row: {
+          commercial_release_id: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          estimated_revenue: number | null
+          estimated_streams: number | null
+          id: string
+          isrc: string | null
+          last_updated: string | null
+          license_id: string | null
+          openplay_metadata: Json | null
+          openplay_track_id: string
+          prominence_score: number | null
+          title: string
+          track_number: number | null
+          updated_at: string | null
+          usage_description: string | null
+          voice_model_id: string | null
+          voice_usage_type: string | null
+        }
+        Insert: {
+          commercial_release_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          estimated_revenue?: number | null
+          estimated_streams?: number | null
+          id?: string
+          isrc?: string | null
+          last_updated?: string | null
+          license_id?: string | null
+          openplay_metadata?: Json | null
+          openplay_track_id: string
+          prominence_score?: number | null
+          title: string
+          track_number?: number | null
+          updated_at?: string | null
+          usage_description?: string | null
+          voice_model_id?: string | null
+          voice_usage_type?: string | null
+        }
+        Update: {
+          commercial_release_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          estimated_revenue?: number | null
+          estimated_streams?: number | null
+          id?: string
+          isrc?: string | null
+          last_updated?: string | null
+          license_id?: string | null
+          openplay_metadata?: Json | null
+          openplay_track_id?: string
+          prominence_score?: number | null
+          title?: string
+          track_number?: number | null
+          updated_at?: string | null
+          usage_description?: string | null
+          voice_model_id?: string | null
+          voice_usage_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_tracks_commercial_release_id_fkey"
+            columns: ["commercial_release_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_releases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_tracks_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_tracks_voice_model_id_fkey"
+            columns: ["voice_model_id"]
+            isOneToOne: false
+            referencedRelation: "me_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_tracks_voice_model_id_fkey"
+            columns: ["voice_model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
+        ]
+      }
       licenses: {
         Row: {
           expires_at: string | null
@@ -85,6 +234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "me_models"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "licenses_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
           },
         ]
       }
@@ -138,6 +294,157 @@ export type Database = {
           },
         ]
       }
+      openplay_webhook_events: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          processed: boolean | null
+          processed_at: string | null
+          signature: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          processed?: boolean | null
+          processed_at?: string | null
+          signature?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed?: boolean | null
+          processed_at?: string | null
+          signature?: string | null
+        }
+        Relationships: []
+      }
+      release_distributions: {
+        Row: {
+          availability_countries: Json | null
+          commercial_release_id: string | null
+          created_at: string | null
+          id: string
+          last_updated: string | null
+          platform: string
+          platform_revenue: number | null
+          platform_streams: number | null
+          release_date_platform: string | null
+          status: string | null
+          store_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          availability_countries?: Json | null
+          commercial_release_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          platform: string
+          platform_revenue?: number | null
+          platform_streams?: number | null
+          release_date_platform?: string | null
+          status?: string | null
+          store_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          availability_countries?: Json | null
+          commercial_release_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          platform?: string
+          platform_revenue?: number | null
+          platform_streams?: number | null
+          release_date_platform?: string | null
+          status?: string | null
+          store_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_distributions_commercial_release_id_fkey"
+            columns: ["commercial_release_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_reconciliation: {
+        Row: {
+          commercial_track_id: string | null
+          created_at: string | null
+          id: string
+          investigated_at: string | null
+          investigated_by: string | null
+          license_revenue: number | null
+          notes: string | null
+          openplay_revenue: number | null
+          openplay_streams: number | null
+          period_end: string
+          period_start: string
+          reconciliation_status: string | null
+          updated_at: string | null
+          variance_amount: number | null
+          variance_percentage: number | null
+        }
+        Insert: {
+          commercial_track_id?: string | null
+          created_at?: string | null
+          id?: string
+          investigated_at?: string | null
+          investigated_by?: string | null
+          license_revenue?: number | null
+          notes?: string | null
+          openplay_revenue?: number | null
+          openplay_streams?: number | null
+          period_end: string
+          period_start: string
+          reconciliation_status?: string | null
+          updated_at?: string | null
+          variance_amount?: number | null
+          variance_percentage?: number | null
+        }
+        Update: {
+          commercial_track_id?: string | null
+          created_at?: string | null
+          id?: string
+          investigated_at?: string | null
+          investigated_by?: string | null
+          license_revenue?: number | null
+          notes?: string | null
+          openplay_revenue?: number | null
+          openplay_streams?: number | null
+          period_end?: string
+          period_start?: string
+          reconciliation_status?: string | null
+          updated_at?: string | null
+          variance_amount?: number | null
+          variance_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_reconciliation_commercial_track_id_fkey"
+            columns: ["commercial_track_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessionchain_attestations: {
         Row: {
           attestation_hash: string
@@ -170,6 +477,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "me_models"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessionchain_attestations_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
           },
           {
             foreignKeyName: "sessionchain_attestations_usage_id_fkey"
@@ -220,11 +534,92 @@ export type Database = {
             referencedRelation: "me_models"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "usage_records_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
+        ]
+      }
+      voice_model_analytics: {
+        Row: {
+          average_prominence: number | null
+          created_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          platform_breakdown: Json | null
+          total_commercial_releases: number | null
+          total_commercial_revenue: number | null
+          total_commercial_streams: number | null
+          total_commercial_tracks: number | null
+          updated_at: string | null
+          usage_type_breakdown: Json | null
+          voice_model_id: string | null
+        }
+        Insert: {
+          average_prominence?: number | null
+          created_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          platform_breakdown?: Json | null
+          total_commercial_releases?: number | null
+          total_commercial_revenue?: number | null
+          total_commercial_streams?: number | null
+          total_commercial_tracks?: number | null
+          updated_at?: string | null
+          usage_type_breakdown?: Json | null
+          voice_model_id?: string | null
+        }
+        Update: {
+          average_prominence?: number | null
+          created_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          platform_breakdown?: Json | null
+          total_commercial_releases?: number | null
+          total_commercial_revenue?: number | null
+          total_commercial_streams?: number | null
+          total_commercial_tracks?: number | null
+          updated_at?: string | null
+          usage_type_breakdown?: Json | null
+          voice_model_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_model_analytics_voice_model_id_fkey"
+            columns: ["voice_model_id"]
+            isOneToOne: false
+            referencedRelation: "me_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_model_analytics_voice_model_id_fkey"
+            columns: ["voice_model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      voice_model_commercial_summary: {
+        Row: {
+          latest_release_date: string | null
+          total_releases: number | null
+          total_revenue: number | null
+          total_streams: number | null
+          total_tracks: number | null
+          voice_model_id: string | null
+          voice_model_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
