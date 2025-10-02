@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:connect.opstaging.com)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)",
+      "Bash(npx supabase migration list:*)",
+      "Bash(npx supabase link:*)",
+      "Bash(npx supabase login:*)",
+      "Bash(npx supabase start:*)",
+      "WebFetch(domain:thnusgshpnktmphivphf.supabase.co)",
+      "Bash(node:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

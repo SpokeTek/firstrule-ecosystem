@@ -38,12 +38,13 @@ const Index = () => {
               >
                 <Link to="/vault">Enter Artist Vault</Link>
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
+              <Button
+                size="lg"
+                variant="outline"
                 className="border-primary/30 hover:bg-primary/10 text-lg px-8 py-6"
+                asChild
               >
-                Explore M.E Models
+                <Link to="/clearvoice">Track Usage</Link>
               </Button>
             </div>
           </div>
@@ -53,6 +54,7 @@ const Index = () => {
       {/* Features Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link to="/vault">
           <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
             <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
               <Shield className="w-6 h-6 text-primary" />
@@ -62,19 +64,23 @@ const Index = () => {
               Secure voice stem storage with granular licensing controls and negative prompting.
             </p>
           </Card>
+          </Link>
 
-          <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-secondary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">ClearVoice™</h3>
-            <p className="text-muted-foreground">
-              Transparent licensing dashboard with real-time usage tracking and revenue splits.
-            </p>
-          </Card>
+          <Link to="/clearvoice">
+            <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all cursor-pointer group">
+              <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mb-4 group-hover:bg-secondary/30 transition-colors">
+                <Sparkles className="w-6 h-6 text-secondary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">ClearVoice™</h3>
+              <p className="text-muted-foreground">
+                Transparent licensing dashboard with real-time usage tracking and revenue splits.
+              </p>
+            </Card>
+          </Link>
 
-          <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+          <Link to="/cowriter">
+          <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all cursor-pointer group">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/30 transition-colors">
               <Users className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Co-Writer™</h3>
@@ -82,6 +88,7 @@ const Index = () => {
               Real-time collaboration tools for producers and artists with MIDI sync.
             </p>
           </Card>
+          </Link>
 
           <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
             <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mb-4">
