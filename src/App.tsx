@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const Vault = lazy(() => import("./pages/Vault"));
+const ClearVoice = lazy(() => import("./pages/ClearVoice"));
+const CoWriter = lazy(() => import("./pages/CoWriter"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -21,6 +23,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/vault" element={<Vault />} />
+            <Route path="/clearvoice" element={<ClearVoice />} />
+            <Route path="/cowriter" element={<CoWriter />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
