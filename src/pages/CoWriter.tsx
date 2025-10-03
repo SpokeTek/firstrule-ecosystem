@@ -22,23 +22,28 @@ import {
   MessageSquare,
   Calendar,
   MapPin,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from "lucide-react";
 import ArtistSearch from "@/components/cowriter/ArtistSearch";
 import SessionWorkspace from "@/components/cowriter/SessionWorkspace";
 import ActiveSessions from "@/components/cowriter/ActiveSessions";
+import { GenerativeStudio } from "@/components/cowriter/GenerativeStudio";
+import { ModelSelector } from "@/components/cowriter/ModelSelector";
+import { SyncStageIntegration } from "@/components/cowriter/SyncStageIntegration";
 import { createOpenPlayClient, OpenPlayAPI } from "@/integrations/openplay/OpenPlayAPI";
 import { Artist, Session } from "@/components/cowriter/types";
 
 
 const CoWriter = () => {
-  const [activeTab, setActiveTab] = useState<'search' | 'sessions' | 'workspace'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'sessions' | 'workspace' | 'generative'>('generative');
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [openPlayAPI, setOpenPlayAPI] = useState<OpenPlayAPI | null>(null);
   const [isLoadingAPI, setIsLoadingAPI] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
 
   // Initialize OpenPlay API client
   useEffect(() => {
@@ -140,8 +145,8 @@ const CoWriter = () => {
                 <h1 className="text-3xl md:text-4xl font-bold">CoWriter™ Studio</h1>
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl">
-                Real-time collaboration tools for producers and artists with MIDI sync.
-                Connect with talented musicians and create amazing music together.
+                AI-powered generative co-writing with M.E Models™, real-time collaboration with SyncStage™, 
+                and professional tools for producers and artists.
               </p>
               <div className="flex items-center gap-4 text-sm">
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
@@ -172,8 +177,12 @@ const CoWriter = () => {
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'search' | 'sessions' | 'workspace')} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 border border-primary/10">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'search' | 'sessions' | 'workspace' | 'generative')} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/50 border border-primary/10">
+            <TabsTrigger value="generative" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Studio
+            </TabsTrigger>
             <TabsTrigger value="search" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Search className="w-4 h-4 mr-2" />
               Find Artists
@@ -187,6 +196,35 @@ const CoWriter = () => {
               Workspace
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="generative" className="space-y-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <GenerativeStudio
+                  selectedArtists={selectedModels}
+                  onArtistSearch={() => setActiveTab('search')}
+                />
+              </div>
+              <div className="space-y-6">
+                <ModelSelector
+                  selectedModels={selectedModels}
+                  onModelsChange={setSelectedModels}
+                />
+                {activeSession && (
+                  <SyncStageIntegration
+                    sessionId={activeSession.id}
+                    collaborators={activeSession.collaborators.map(c => ({
+                      id: c.id,
+                      name: c.name,
+                      status: c.availability === 'available' ? 'connected' : 'offline',
+                      latency: Math.floor(Math.random() * 50) + 10,
+                      instruments: c.instruments
+                    }))}
+                  />
+                )}
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="search" className="space-y-6">
             {isLoadingAPI ? (

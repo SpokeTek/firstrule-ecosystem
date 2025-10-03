@@ -119,8 +119,8 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3">Co-Writer™</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Our collaborative generative AI music model as a VST Plugin, facilitating asset creation. 
-                DAW-agnostic with smart search capabilities.
+                Agentic AI co-writing with M.E Models™ integration. Generate full songs or stem-by-stem MIDI. 
+                Real-time collaboration powered by SyncStage™ for zero-latency remote sessions. In-web and VST plugin.
               </p>
             </Card>
           </Link>
