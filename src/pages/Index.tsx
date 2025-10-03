@@ -96,7 +96,7 @@ const Index = () => {
 
       {/* Core Products */}
       <section className="container mx-auto px-4 pb-20">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Artist Vault */}
           <Link to="/vault" className="group">
             <Card className="p-8 bg-gradient-card backdrop-blur-sm border-primary/20 hover:border-primary/40 transition-all h-full hover:shadow-glow-primary">
@@ -135,6 +135,20 @@ const Index = () => {
               <p className="text-muted-foreground leading-relaxed">
                 Our clearinghouse for songs, masters and digital voiceprints. 
                 Contributing authorship rights with transparent tracking and compensation.
+              </p>
+            </Card>
+          </Link>
+
+          {/* Partner API */}
+          <Link to="/partner-docs" className="group">
+            <Card className="p-8 bg-gradient-card backdrop-blur-sm border-primary/20 hover:border-secondary/40 transition-all h-full hover:shadow-glow-secondary">
+              <div className="w-14 h-14 rounded-xl bg-secondary/20 flex items-center justify-center mb-6 group-hover:bg-secondary/30 transition-colors">
+                <GitBranch className="w-7 h-7 text-secondary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">Partner API</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Integrate M.E Models™ into your platform with our B2B2C API. 
+                Real-time training, licensing, and usage tracking with comprehensive documentation.
               </p>
             </Card>
           </Link>

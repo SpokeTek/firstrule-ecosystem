@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.training-upload]
 verify_jwt = true
+
+[functions.partner-api]
+verify_jwt = false
+
+[functions.training-realtime]
+verify_jwt = false

@@ -12,6 +12,7 @@ const queryClient = new QueryClient();
 const Vault = lazy(() => import("./pages/Vault"));
 const ClearVoice = lazy(() => import("./pages/ClearVoice"));
 const CoWriter = lazy(() => import("./pages/CoWriter"));
+const PartnerDocs = lazy(() => import("./pages/PartnerDocs"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/vault" element={<Vault />} />
             <Route path="/clearvoice" element={<ClearVoice />} />
             <Route path="/cowriter" element={<CoWriter />} />
+            <Route path="/partner-docs" element={<PartnerDocs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

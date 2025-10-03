@@ -1,0 +1,488 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Artist Vault Partner API",
+    "description": "API for partners to access M.E Models, manage licenses, and track usage",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "api@artistvault.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://thnusgshpnktmphivphf.supabase.co/functions/v1",
+      "description": "Production API"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/vault-search": {
+      "get": {
+        "summary": "Search M.E Models",
+        "description": "Search for M.E Models in the Artist Vault based on query parameters",
+        "operationId": "searchModels",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Search query string",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "modality",
+            "in": "query",
+            "required": false,
+            "description": "Filter by modality (e.g., 'voice', 'music')",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results (default: 20)",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful search",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/partner-api/models/{model_id}": {
+      "get": {
+        "summary": "Get model details",
+        "description": "Retrieve detailed information about a specific M.E Model",
+        "operationId": "getModel",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the model",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Model details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Model"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/partner-api/licenses": {
+      "post": {
+        "summary": "Create a license",
+        "description": "Create a new license for using an M.E Model",
+        "operationId": "createLicense",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLicenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "License created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/License"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/partner-api/usage": {
+      "get": {
+        "summary": "Get usage statistics",
+        "description": "Retrieve usage statistics for models",
+        "operationId": "getUsage",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "query",
+            "required": false,
+            "description": "Filter by specific model",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Record usage",
+        "description": "Record a usage event for an M.E Model",
+        "operationId": "recordUsage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUsageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usage recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partner-auth": {
+      "get": {
+        "summary": "Validate API key",
+        "description": "Validate a partner API key and get permissions",
+        "operationId": "validateApiKey",
+        "responses": {
+          "200": {
+            "description": "API key is valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyValidation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Partner API key for authentication"
+      }
+    },
+    "schemas": {
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Model"
+            }
+          },
+          "count": {
+            "type": "integer"
+          },
+          "query": {
+            "type": "string"
+          }
+        }
+      },
+      "Model": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "canonical_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sample_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "provenance": {
+            "type": "object"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "artists": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "artist_name": {
+                "type": "string"
+              },
+              "bio": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "CreateLicenseRequest": {
+        "type": "object",
+        "required": ["model_id", "licensee_email", "license_type"],
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "licensee_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "license_type": {
+            "type": "string",
+            "enum": ["commercial", "personal", "research"]
+          },
+          "terms": {
+            "type": "object"
+          }
+        }
+      },
+      "License": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "model_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "licensee_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "license_type": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "object"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RecordUsageRequest": {
+        "type": "object",
+        "required": ["model_id", "license_id"],
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "license_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usage_metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "UsageRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "model_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "license_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usage_metadata": {
+            "type": "object"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "verified", "disputed"]
+          }
+        }
+      },
+      "UsageResponse": {
+        "type": "object",
+        "properties": {
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageRecord"
+            }
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      },
+      "ApiKeyValidation": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "partner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rate_limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
