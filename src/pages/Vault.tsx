@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Shield, X } from "lucide-react";
+import { Upload, Shield, X, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Vault = () => {
   const { toast } = useToast();
@@ -20,6 +22,37 @@ const Vault = () => {
     exclusions: "",
   });
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkVerificationStatus();
+  }, []);
+
+  const checkVerificationStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('artists')
+        .select('identity_verified')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsVerified(data?.identity_verified || false);
+    } catch (error) {
+      console.error('Error checking verification:', error);
+      setIsVerified(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -59,6 +92,15 @@ const Vault = () => {
   };
 
   const handleSubmit = () => {
+    if (!isVerified) {
+      toast({
+        title: "Verification Required",
+        description: "You must verify your identity before creating an M.E Model",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Vault created successfully!",
       description: "Your M.E Model is being processed and will be ready soon.",
@@ -66,10 +108,31 @@ const Vault = () => {
     // In production, this would submit to the database
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 pt-24 flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="container mx-auto px-4 py-8 pt-24">
+        {/* Verification Warning */}
+        {isVerified === false && (
+          <Alert className="max-w-2xl mx-auto mb-6 border-destructive/50 bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              <strong>Identity Verification Required:</strong> You must verify your identity before creating an M.E Model. 
+              This ensures that only the rightful owner can create and control voice models.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -264,8 +327,12 @@ const Vault = () => {
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
                   Back
                 </Button>
-                <Button onClick={handleSubmit} className="flex-1 bg-primary hover:bg-primary/90 shadow-glow-purple">
-                  Create Vault
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={!isVerified}
+                  className="flex-1 bg-primary hover:bg-primary/90 shadow-glow-purple disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerified ? 'Create Vault' : 'Verification Required'}
                 </Button>
               </div>
             </div>

@@ -25,9 +25,10 @@ interface VoiceModel {
 interface ModelSelectorProps {
   selectedModels: string[];
   onModelsChange: (models: string[]) => void;
+  onlyUserModels?: boolean; // When true, only show user's own models
 }
 
-const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) => {
+const ModelSelector = ({ selectedModels, onModelsChange, onlyUserModels = false }: ModelSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [models, setModels] = useState<VoiceModel[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,14 @@ const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) =
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Get current user if filtering to only user models
+      let currentUserId = null;
+      if (onlyUserModels) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUserId = user?.id;
+      }
+
+      let queryBuilder = supabase
         .from('me_models')
         .select(`
           id,
@@ -49,16 +57,28 @@ const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) =
           canonical_name,
           description,
           artists (
-            artist_name
+            artist_name,
+            user_id
           )
         `)
         .eq('is_active', true)
         .or(`model_name.ilike.%${query}%,canonical_name.ilike.%${query}%`)
         .limit(10);
 
+      const { data, error } = await queryBuilder;
+
       if (error) throw error;
 
-      const formattedModels = (data || []).map(model => ({
+      let filteredData = data || [];
+      
+      // Filter to only user's models if required
+      if (onlyUserModels && currentUserId) {
+        filteredData = filteredData.filter(model => 
+          model.artists?.user_id === currentUserId
+        );
+      }
+
+      const formattedModels = filteredData.map(model => ({
         id: model.id,
         model_name: model.model_name,
         canonical_name: model.canonical_name,
@@ -90,10 +110,16 @@ const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) =
   }, [searchQuery]);
 
   const toggleModel = (modelName: string) => {
-    if (selectedModels.includes(modelName)) {
-      onModelsChange(selectedModels.filter(m => m !== modelName));
+    if (onlyUserModels) {
+      // When onlyUserModels is true, only allow selecting one model
+      onModelsChange([modelName]);
     } else {
-      onModelsChange([...selectedModels, modelName]);
+      // Normal multi-select behavior
+      if (selectedModels.includes(modelName)) {
+        onModelsChange(selectedModels.filter(m => m !== modelName));
+      } else {
+        onModelsChange([...selectedModels, modelName]);
+      }
     }
   };
 
@@ -141,7 +167,7 @@ const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) =
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search M.E Models™ from Artist Vault..."
+          placeholder={onlyUserModels ? "Search your M.E Models™..." : "Search M.E Models™ from Artist Vault..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -203,7 +229,10 @@ const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) =
       {/* Info */}
       <Card className="p-3 border-border/50 bg-accent/5">
         <p className="text-xs text-muted-foreground">
-          💡 Selected M.E Models™ will influence the AI's generation style and can be used as vocal agents in your co-writing session.
+          {onlyUserModels 
+            ? "🔒 You can only select and update your own M.E Models™ for security purposes."
+            : "💡 Selected M.E Models™ will influence the AI's generation style and can be used as vocal agents in your co-writing session."
+          }
         </p>
       </Card>
     </div>

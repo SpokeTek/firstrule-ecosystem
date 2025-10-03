@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          identity_verified: boolean
           updated_at: string
           user_id: string | null
         }
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          identity_verified?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          identity_verified?: boolean
           updated_at?: string
           user_id?: string | null
         }
