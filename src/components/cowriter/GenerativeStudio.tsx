@@ -22,7 +22,7 @@ interface GenerativeStudioProps {
   onArtistSearch?: () => void;
 }
 
-export const GenerativeStudio = ({ selectedArtists = [], onArtistSearch }: GenerativeStudioProps) => {
+const GenerativeStudio = ({ selectedArtists = [], onArtistSearch }: GenerativeStudioProps) => {
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('');
   const [mode, setMode] = useState<'full-generation' | 'stem-generation' | 'lyric-generation'>('full-generation');
@@ -316,3 +316,5 @@ export const GenerativeStudio = ({ selectedArtists = [], onArtistSearch }: Gener
     </div>
   );
 };
+
+export default GenerativeStudio;

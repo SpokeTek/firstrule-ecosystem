@@ -27,7 +27,7 @@ interface ModelSelectorProps {
   onModelsChange: (models: string[]) => void;
 }
 
-export const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) => {
+const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [models, setModels] = useState<VoiceModel[]>([]);
   const [loading, setLoading] = useState(false);
@@ -209,3 +209,5 @@ export const ModelSelector = ({ selectedModels, onModelsChange }: ModelSelectorP
     </div>
   );
 };
+
+export default ModelSelector;

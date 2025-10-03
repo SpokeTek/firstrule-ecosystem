@@ -26,7 +26,7 @@ interface SyncStageIntegrationProps {
   collaborators: Collaborator[];
 }
 
-export const SyncStageIntegration = ({ sessionId, collaborators }: SyncStageIntegrationProps) => {
+const SyncStageIntegration = ({ sessionId, collaborators }: SyncStageIntegrationProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -177,3 +177,5 @@ export const SyncStageIntegration = ({ sessionId, collaborators }: SyncStageInte
     </Card>
   );
 };
+
+export default SyncStageIntegration;
