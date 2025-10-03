@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Navigation } from "@/components/Navigation";
 import
  {
   Eye,
@@ -33,8 +34,9 @@ import RevenueReconciliation from "@/components/clearvoice/RevenueReconciliation
 const ClearVoice = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
       {/* Header Section */}
-      <section className="relative overflow-hidden border-b border-primary/10">
+      <section className="relative overflow-hidden border-b border-primary/10 pt-16">
         <div className="absolute inset-0 bg-gradient-hero opacity-30" />
         <div className="container relative z-10 mx-auto px-4 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Shield, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Navigation } from "@/components/Navigation";
 
 const Vault = () => {
   const { toast } = useToast();
@@ -67,7 +68,8 @@ const Vault = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
