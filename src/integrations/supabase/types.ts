@@ -294,6 +294,60 @@ export type Database = {
           },
         ]
       }
+      model_provenance: {
+        Row: {
+          attestation_data: Json
+          block_number: number | null
+          chain_id: string | null
+          id: string
+          metadata: Json | null
+          model_id: string
+          provenance_hash: string
+          transaction_hash: string | null
+          verified_at: string
+          verifier: string | null
+        }
+        Insert: {
+          attestation_data: Json
+          block_number?: number | null
+          chain_id?: string | null
+          id?: string
+          metadata?: Json | null
+          model_id: string
+          provenance_hash: string
+          transaction_hash?: string | null
+          verified_at?: string
+          verifier?: string | null
+        }
+        Update: {
+          attestation_data?: Json
+          block_number?: number | null
+          chain_id?: string | null
+          id?: string
+          metadata?: Json | null
+          model_id?: string
+          provenance_hash?: string
+          transaction_hash?: string | null
+          verified_at?: string
+          verifier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_provenance_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "me_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_provenance_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
+        ]
+      }
       openplay_webhook_events: {
         Row: {
           created_at: string | null
@@ -327,6 +381,227 @@ export type Database = {
           processed?: boolean | null
           processed_at?: string | null
           signature?: string | null
+        }
+        Relationships: []
+      }
+      partner_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          partner_id: string
+          rate_limit_per_minute: number | null
+          scopes: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          partner_id: string
+          rate_limit_per_minute?: number | null
+          scopes?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          partner_id?: string
+          rate_limit_per_minute?: number | null
+          scopes?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_api_keys_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_model_access: {
+        Row: {
+          access_type: string | null
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          model_id: string
+          partner_id: string
+        }
+        Insert: {
+          access_type?: string | null
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          model_id: string
+          partner_id: string
+        }
+        Update: {
+          access_type?: string | null
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          model_id?: string
+          partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_model_access_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "me_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_model_access_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
+          {
+            foreignKeyName: "partner_model_access_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_organizations: {
+        Row: {
+          contact_email: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          metadata: Json | null
+          name: string
+          slug: string
+          status: string | null
+          tier: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          contact_email: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          metadata?: Json | null
+          name: string
+          slug: string
+          status?: string | null
+          tier?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          contact_email?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          metadata?: Json | null
+          name?: string
+          slug?: string
+          status?: string | null
+          tier?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      partner_users: {
+        Row: {
+          created_at: string
+          id: string
+          partner_id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_id: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -494,6 +769,101 @@ export type Database = {
           },
         ]
       }
+      training_sessions: {
+        Row: {
+          completed_at: string | null
+          data_summary: Json | null
+          id: string
+          metadata: Json | null
+          model_id: string
+          session_type: string | null
+          started_at: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          data_summary?: Json | null
+          id?: string
+          metadata?: Json | null
+          model_id: string
+          session_type?: string | null
+          started_at?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          data_summary?: Json | null
+          id?: string
+          metadata?: Json | null
+          model_id?: string
+          session_type?: string | null
+          started_at?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "me_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "voice_model_commercial_summary"
+            referencedColumns: ["voice_model_id"]
+          },
+        ]
+      }
+      training_uploads: {
+        Row: {
+          extracted_features: Json | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          processed_at: string | null
+          processing_status: string | null
+          session_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          extracted_features?: Json | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          processed_at?: string | null
+          processing_status?: string | null
+          session_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          extracted_features?: Json | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          processed_at?: string | null
+          processing_status?: string | null
+          session_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_uploads_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_records: {
         Row: {
           id: string
@@ -542,6 +912,27 @@ export type Database = {
             referencedColumns: ["voice_model_id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       voice_model_analytics: {
         Row: {
@@ -622,9 +1013,16 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "artist" | "partner" | "admin"
       license_type: "personal" | "commercial" | "enterprise"
       usage_status: "pending" | "active" | "completed" | "revoked"
     }
@@ -754,6 +1152,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["artist", "partner", "admin"],
       license_type: ["personal", "commercial", "enterprise"],
       usage_status: ["pending", "active", "completed", "revoked"],
     },

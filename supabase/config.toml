@@ -1,1 +1,10 @@
 project_id = "thnusgshpnktmphivphf"
+
+[functions.partner-auth]
+verify_jwt = false
+
+[functions.api-generate-key]
+verify_jwt = true
+
+[functions.vault-search]
+verify_jwt = false
