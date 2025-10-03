@@ -31,6 +31,7 @@ import ActiveSessions from "@/components/cowriter/ActiveSessions";
 import GenerativeStudio from "@/components/cowriter/GenerativeStudio";
 import ModelSelector from "@/components/cowriter/ModelSelector";
 import SyncStageIntegration from "@/components/cowriter/SyncStageIntegration";
+import TrainingDataCapture from "@/components/cowriter/TrainingDataCapture";
 import { createOpenPlayClient, OpenPlayAPI } from "@/integrations/openplay/OpenPlayAPI";
 import { Artist, Session } from "@/components/cowriter/types";
 
@@ -209,6 +210,9 @@ const CoWriter = () => {
                 <ModelSelector
                   selectedModels={selectedModels}
                   onModelsChange={setSelectedModels}
+                />
+                <TrainingDataCapture
+                  selectedModelId={selectedModels[0]}
                 />
                 {activeSession && (
                   <SyncStageIntegration
