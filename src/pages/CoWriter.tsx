@@ -32,6 +32,7 @@ import GenerativeStudio from "@/components/cowriter/GenerativeStudio";
 import ModelSelector from "@/components/cowriter/ModelSelector";
 import SyncStageIntegration from "@/components/cowriter/SyncStageIntegration";
 import TrainingDataCapture from "@/components/cowriter/TrainingDataCapture";
+import { AudioAnalyzer } from "@/components/cowriter/AudioAnalyzer";
 import { createOpenPlayClient, OpenPlayAPI } from "@/integrations/openplay/OpenPlayAPI";
 import { Artist, Session } from "@/components/cowriter/types";
 
@@ -200,11 +201,12 @@ const CoWriter = () => {
 
           <TabsContent value="generative" className="space-y-6">
             <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <GenerativeStudio
                   selectedArtists={selectedModels}
                   onArtistSearch={() => setActiveTab('search')}
                 />
+                <AudioAnalyzer />
               </div>
               <div className="space-y-6">
                 <ModelSelector

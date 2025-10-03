@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.training-realtime]
 verify_jwt = false
+
+[functions.audio-analysis]
+verify_jwt = true
