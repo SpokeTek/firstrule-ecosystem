@@ -39,6 +39,21 @@ serve(async (req) => {
       throw new Error('Missing required fields: file and modelId');
     }
 
+    // Verify model ownership
+    const { data: modelCheck, error: modelError } = await supabase
+      .from('me_models')
+      .select('artist_id, artists!inner(user_id)')
+      .eq('id', modelId)
+      .eq('artists.user_id', user.id)
+      .single();
+    
+    if (modelError || !modelCheck) {
+      return new Response(
+        JSON.stringify({ error: 'You do not have permission to upload training data for this model' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Validate file type
     const allowedTypes = [
       'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg',

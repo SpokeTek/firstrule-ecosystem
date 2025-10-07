@@ -12,7 +12,29 @@ serve(async (req) => {
   }
 
   try {
-    const { audioUrl, userPrompt, artistNames } = await req.json();
+  const { audioUrl, userPrompt, artistNames } = await req.json();
+
+  // Input validation
+  if (!userPrompt || typeof userPrompt !== 'string') {
+    return new Response(
+      JSON.stringify({ error: 'Invalid or missing userPrompt' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  if (userPrompt.length > 2000) {
+    return new Response(
+      JSON.stringify({ error: 'Prompt exceeds maximum length of 2000 characters' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  if (audioUrl && typeof audioUrl !== 'string') {
+    return new Response(
+      JSON.stringify({ error: 'Invalid audio URL format' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -48,15 +70,20 @@ serve(async (req) => {
     }
 
     // Build context for AI analysis
-    const modelsContext = models?.map(m => ({
-      id: m.id,
-      name: m.model_name,
-      canonical_name: m.canonical_name,
-      artist: m.artists?.artist_name,
-      description: m.description,
-      provenance: m.provenance,
-      sample_url: m.sample_url
-    })) || [];
+    const modelsContext = models?.map(m => {
+      const artistData: any = m.artists;
+      const artistName = Array.isArray(artistData) ? artistData[0]?.artist_name : artistData?.artist_name;
+      
+      return {
+        id: m.id,
+        name: m.model_name,
+        canonical_name: m.canonical_name,
+        artist: artistName,
+        description: m.description,
+        provenance: m.provenance,
+        sample_url: m.sample_url
+      };
+    }) || [];
 
     const systemPrompt = `You are an expert music A&R agent specializing in voice model matching for covers, remixes, and collaborations.
 
@@ -138,7 +165,7 @@ Respond with a JSON array of recommendations in this format:
       // Fallback: return top models based on artist name matching
       recommendations = modelsContext
         .filter(m => !artistNames || artistNames.length === 0 || 
-          artistNames.some(name => m.artist?.toLowerCase().includes(name.toLowerCase())))
+          artistNames.some((name: string) => m.artist?.toLowerCase().includes(name.toLowerCase())))
         .slice(0, 5)
         .map(m => ({
           model_id: m.id,

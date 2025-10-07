@@ -91,6 +91,15 @@ serve(async (req) => {
     // GET /models/{id} - Retrieve specific model
     if (method === 'GET' && path.match(/^\/models\/[^/]+$/)) {
       const modelId = path.split('/')[2];
+      
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(modelId)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid model ID format' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Check access
       const { data: access } = await supabase
@@ -153,9 +162,20 @@ serve(async (req) => {
       const body = await req.json();
       const { model_id, licensee_email, license_type, terms } = body;
 
+      // Validate inputs
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
       if (!model_id || !licensee_email || !license_type) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!uuidRegex.test(model_id) || !emailRegex.test(licensee_email)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid input format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -258,9 +278,19 @@ serve(async (req) => {
       const body = await req.json();
       const { model_id, license_id, usage_metadata } = body;
 
+      // Validate UUIDs
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
       if (!model_id || !license_id) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!uuidRegex.test(model_id) || !uuidRegex.test(license_id)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid UUID format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

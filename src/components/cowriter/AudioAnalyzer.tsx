@@ -34,15 +34,32 @@ export const AudioAnalyzer = () => {
     return matches || [];
   };
 
-  const highlightArtistNames = (text: string, artists: string[]) => {
-    if (!artists || artists.length === 0) return text;
+  const HighlightedText = ({ text, highlights }: { text: string; highlights: string[] }) => {
+    if (!highlights || highlights.length === 0) return <>{text}</>;
     
-    let highlighted = text;
-    artists.forEach(artist => {
-      const regex = new RegExp(`\\b${artist}\\b`, 'gi');
-      highlighted = highlighted.replace(regex, `<mark class="bg-primary/20 px-1 rounded">${artist}</mark>`);
+    const parts: (string | JSX.Element)[] = [];
+    let remaining = text;
+    
+    highlights.forEach((highlight, idx) => {
+      const lowerRemaining = remaining.toLowerCase();
+      const lowerHighlight = highlight.toLowerCase();
+      const index = lowerRemaining.indexOf(lowerHighlight);
+      
+      if (index !== -1) {
+        if (index > 0) {
+          parts.push(remaining.substring(0, index));
+        }
+        parts.push(
+          <mark key={`${highlight}-${idx}`} className="bg-primary/20 px-1 rounded">
+            {remaining.substring(index, index + highlight.length)}
+          </mark>
+        );
+        remaining = remaining.substring(index + highlight.length);
+      }
     });
-    return highlighted;
+    
+    if (remaining) parts.push(remaining);
+    return <>{parts}</>;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,14 +225,12 @@ export const AudioAnalyzer = () => {
                     <CardTitle className="text-lg">
                       {rec.model_name}
                     </CardTitle>
-                    <CardDescription 
-                      dangerouslySetInnerHTML={{
-                        __html: highlightArtistNames(
-                          `by ${rec.artist_name}`,
-                          mentionedArtists
-                        )
-                      }}
-                    />
+                    <CardDescription>
+                      <HighlightedText 
+                        text={`by ${rec.artist_name}`} 
+                        highlights={mentionedArtists} 
+                      />
+                    </CardDescription>
                   </div>
                   <Badge 
                     variant={rec.match_score >= 80 ? "default" : "secondary"}
@@ -229,7 +244,7 @@ export const AudioAnalyzer = () => {
                 <div>
                   <span className="text-sm font-medium">Why this matches:</span>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {rec.reasoning}
+                    <HighlightedText text={rec.reasoning} highlights={mentionedArtists} />
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
