@@ -202,8 +202,7 @@ app.get('/api/openplay/releases', async (req, res) => {
   }
 });
 
-app.get('/api/openplay/tracks', async (req, res) => {
-  try {
+app.get('/api/open  try {
     const { search, limit, page, artistId, releaseId, voiceModelId } = req.query;
     
     const searchParams = new URLSearchParams();
