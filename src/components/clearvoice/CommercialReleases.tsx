@@ -149,6 +149,7 @@ const CommercialReleases = () => {
       setReleases(mockReleases);
       setLoading(false);
     }, 1000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalRevenue = releases.reduce((sum, release) => sum + release.total_revenue, 0);

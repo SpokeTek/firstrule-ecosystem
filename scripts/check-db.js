@@ -13,10 +13,7 @@ async function checkDatabase() {
     // Test basic connection
     console.log('1. Testing basic connection...');
     const { data, error } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .limit(10);
+      .rpc('get_tables');
 
     if (error) {
       console.error('❌ Connection failed:', error.message);

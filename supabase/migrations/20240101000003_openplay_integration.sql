@@ -34,7 +34,7 @@ CREATE TABLE commercial_tracks (
   track_number INTEGER,
 
   -- Voice model linkage
-  voice_model_id UUID REFERENCES voice_models(id) ON DELETE SET NULL,
+  voice_model_id UUID REFERENCES me_models(id) ON DELETE SET NULL,
   license_id UUID REFERENCES licenses(id) ON DELETE SET NULL,
 
   -- Attribution and usage details
@@ -108,7 +108,7 @@ CREATE TABLE revenue_reconciliation (
 -- Voice model performance analytics
 CREATE TABLE voice_model_analytics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  voice_model_id UUID REFERENCES voice_models(id) ON DELETE CASCADE,
+  voice_model_id UUID REFERENCES me_models(id) ON DELETE CASCADE,
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
 
@@ -177,15 +177,21 @@ ALTER TABLE voice_model_analytics ENABLE ROW LEVEL SECURITY;
 -- Only authenticated users can read their own data
 CREATE POLICY "Users can view own commercial releases" ON commercial_releases
   FOR SELECT USING (
-    voice_model_id IN (
-      SELECT id FROM voice_models WHERE user_id = auth.uid()
+    id IN (
+      SELECT cr.id FROM commercial_releases cr
+      JOIN commercial_tracks ct ON ct.commercial_release_id = cr.id
+      JOIN me_models mm ON mm.id = ct.voice_model_id
+      JOIN artists a ON a.id = mm.artist_id
+      WHERE a.user_id = auth.uid()
     )
   );
 
 CREATE POLICY "Users can view own commercial tracks" ON commercial_tracks
   FOR SELECT USING (
     voice_model_id IN (
-      SELECT id FROM voice_models WHERE user_id = auth.uid()
+      SELECT mm.id FROM me_models mm
+      JOIN artists a ON a.id = mm.artist_id
+      WHERE a.user_id = auth.uid()
     )
   );
 
@@ -225,14 +231,14 @@ $$ LANGUAGE plpgsql;
 CREATE VIEW voice_model_commercial_summary AS
 SELECT
   vm.id as voice_model_id,
-  vm.name as voice_model_name,
+  vm.model_name as voice_model_name,
   COUNT(DISTINCT cr.id) as total_releases,
   COUNT(DISTINCT ct.id) as total_tracks,
   COALESCE(SUM(ct.estimated_revenue), 0) as total_revenue,
   COALESCE(SUM(ct.estimated_streams), 0) as total_streams,
   MAX(cr.release_date) as latest_release_date
-FROM voice_models vm
+FROM me_models vm
 LEFT JOIN commercial_tracks ct ON ct.voice_model_id = vm.id
 LEFT JOIN commercial_releases cr ON cr.id = ct.commercial_release_id
 WHERE cr.status = 'active' OR cr.id IS NULL
-GROUP BY vm.id, vm.name;
+GROUP BY vm.id, vm.model_name;

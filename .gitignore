@@ -36,3 +36,28 @@ dist-ssr
 .env.test.test.local
 .env.test.test.development
 .env.test.test.production
+
+# Expo
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Metro
+.metro-health-check*
+
+# Flipper
+ios/Pods/
+android/app/build/
+
+# Temporary files
+*.tmp
+*.temp

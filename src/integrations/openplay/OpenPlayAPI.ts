@@ -57,47 +57,92 @@ export class OpenPlayAPI {
   private config: OpenPlayConfig;
   private rateLimitRemaining = 1000;
   private rateLimitReset = 0;
+  private useProxy: boolean;
 
   constructor(config: OpenPlayConfig) {
     this.config = config;
+    // Use proxy in development, direct API in production
+    this.useProxy = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
   }
 
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.config.baseUrl}${endpoint}`;
+    // Use proxy in development, direct API in production
+    const baseUrl = this.useProxy ? '' : this.config.baseUrl;
+    const proxyEndpoint = this.useProxy ? `/api/openplay${endpoint}` : endpoint;
+    const url = `${baseUrl}${proxyEndpoint}`;
+
+    console.log(`🌐 OpenPlay API Request: ${url}`);
+    console.log(`🔑 Using ${this.useProxy ? 'proxy' : 'direct'} connection`);
+    console.log(`🔑 API Key: ${this.config.apiKey ? '***' + this.config.apiKey.slice(-4) : 'not set'}`);
 
     // Check rate limiting
     if (this.rateLimitRemaining <= 1 && Date.now() < this.rateLimitReset) {
       await new Promise(resolve => setTimeout(resolve, this.rateLimitReset - Date.now()));
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+    try {
+      const requestOptions: RequestInit = {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers,
+        },
+      };
 
-    // Update rate limit info from headers
-    const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
-    const rateLimitReset = response.headers.get('x-ratelimit-reset');
+      // Only add Authorization header for direct API calls (not proxy)
+      if (!this.useProxy) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${this.config.apiKey}`,
+        };
+      }
 
-    if (rateLimitRemaining) {
-      this.rateLimitRemaining = parseInt(rateLimitRemaining);
+      const response = await fetch(url, requestOptions);
+
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+
+      // Update rate limit info from headers
+      const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+      const rateLimitReset = response.headers.get('x-ratelimit-reset');
+
+      if (rateLimitRemaining) {
+        this.rateLimitRemaining = parseInt(rateLimitRemaining);
+      }
+      if (rateLimitReset) {
+        this.rateLimitReset = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ OpenPlay API Error Response:`, errorText);
+        throw new Error(`OpenPlay API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ OpenPlay API Success:`, data);
+      return data;
+    } catch (error) {
+      console.error(`❌ OpenPlay API Network Error:`, error);
+
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        if (this.useProxy) {
+          throw new Error(`Network error accessing OpenPlay API through proxy at ${url}. Check if the proxy server is running.`);
+        } else {
+          throw new Error(`Network error accessing OpenPlay API at ${url}. This may be due to CORS restrictions or network connectivity. Using demo mode.`);
+        }
+      }
+
+      // Handle authentication errors specifically
+      if (error.message.includes('401') || error.message.includes('Not authorized')) {
+        throw new Error(`OpenPlay API authentication failed. The API credentials may not be valid for this environment. Using demo mode.`);
+      }
+
+      throw error;
     }
-    if (rateLimitReset) {
-      this.rateLimitReset = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
-    }
-
-    if (!response.ok) {
-      throw new Error(`OpenPlay API error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
   }
 
   // Artists

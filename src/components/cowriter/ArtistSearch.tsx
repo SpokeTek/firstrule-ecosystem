@@ -208,6 +208,17 @@ const ArtistSearch: React.FC<ArtistSearchProps> = ({ openPlayAPI, onArtistSelect
         }
       } catch (error) {
         console.error('Error searching artists:', error);
+
+        // Check if it's a CORS error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.warn('🌐 CORS detected - OpenPlay API not accessible from browser. Using demo mode.');
+        }
+
+        // Check if it's an authentication error
+        if (error.message.includes('authentication') || error.message.includes('401')) {
+          console.warn('🔑 OpenPlay API authentication failed - credentials may not be valid for this environment. Using demo mode.');
+        }
+
         // Fallback to mock data
         setArtists(mockArtists);
       } finally {
@@ -260,10 +271,18 @@ const ArtistSearch: React.FC<ArtistSearchProps> = ({ openPlayAPI, onArtistSelect
       <Card className="p-6 bg-gradient-card backdrop-blur-sm border-primary/10">
         <div className="space-y-4">
           {openPlayAPI && (
-            <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-500">
-                Connected to OpenPlay API - Real-time artist search available
+            <div className="flex items-center gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+              <Search className="w-4 h-4 text-amber-500" />
+              <span className="text-sm text-amber-500">
+                OpenPlay API configured - Using demo data (API credentials need validation)
+              </span>
+            </div>
+          )}
+          {!openPlayAPI && (
+            <div className="flex items-center gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+              <Search className="w-4 h-4 text-amber-500" />
+              <span className="text-sm text-amber-500">
+                Using demo mode - Browse sample artists below
               </span>
             </div>
           )}
@@ -273,7 +292,7 @@ const ArtistSearch: React.FC<ArtistSearchProps> = ({ openPlayAPI, onArtistSelect
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder={openPlayAPI ? "Search OpenPlay artist database..." : "Search artists by name, genre, or skills..."}
+                  placeholder="Search demo artists by name, genre, or skills..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"

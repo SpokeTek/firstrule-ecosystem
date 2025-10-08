@@ -45,9 +45,9 @@ const CoWriter = () => {
       try {
         // In production, these would come from environment variables
         const config = {
-          apiKey: process.env.NEXT_PUBLIC_OPENPLAY_API_KEY || 'demo-key',
-          baseUrl: process.env.NEXT_PUBLIC_OPENPLAY_BASE_URL || 'https://connect.opstaging.com/v2',
-          webhookSecret: process.env.OPENPLAY_WEBHOOK_SECRET || 'demo-secret'
+          apiKey: import.meta.env.VITE_OPENPLAY_API_KEY || import.meta.env.OPENPLAY_API_KEY || 'demo-key',
+          baseUrl: import.meta.env.VITE_OPENPLAY_BASE_URL || import.meta.env.OPENPLAY_BASE_URL || 'https://connect.opstaging.com/v2',
+          webhookSecret: import.meta.env.VITE_OPENPLAY_SECRET_KEY || import.meta.env.OPENPLAY_SECRET_KEY || 'demo-secret'
         };
 
         const apiClient = createOpenPlayClient(config);
