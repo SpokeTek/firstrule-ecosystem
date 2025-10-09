@@ -6,45 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Music, Mic, Loader2, Wand2, User } from "lucide-react";
+import { Sparkles, Music, Mic, Loader2, Wand2 } from "lucide-react";
+import type { CowriterModelProfile } from "./types";
 
-type SessionStatus = "idle" | "connecting" | "connected";
+export type SessionStatus = "idle" | "connecting" | "connected";
 
 interface GenerativeStudioProps {
-  selectedArtists?: string[];
-  onArtistSearch?: () => void;
+  activeModel?: CowriterModelProfile;
+  onSessionStatusChange?: (status: SessionStatus) => void;
 }
 
-interface Model {
-  id: string;
-  name: string;
-  description: string;
-  voiceName: string;
-}
-
-const mockModels: Model[] = [
-  {
-    id: "me-nova",
-    name: "M.E. Nova",
-    description: "Expressive pop lead with warm presence",
-    voiceName: "Nova",
-  },
-];
-
-const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioProps) => {
+const GenerativeStudio = ({ activeModel, onSessionStatusChange }: GenerativeStudioProps) => {
   const { toast } = useToast();
 
-  // Model selection
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(mockModels[0]?.id ?? null);
-  const selectedModel = useMemo(() => mockModels.find((m) => m.id === selectedModelId) ?? null, [selectedModelId]);
-
-  // LiveKit session simulation
-  const [sessionStatus, setSessionStatus] = useState<SessionStatus>("idle");
+  const [sessionStatus, setSessionStatusState] = useState<SessionStatus>("idle");
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [log, setLog] = useState<{ ts: number; role: "system" | "agent" | "tool" | "user"; text: string }[]>([]);
+  const [log, setLog] = useState<Array<{ ts: number; role: "system" | "agent" | "tool" | "user"; text: string }>>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Tools state: voiceSwap
   const [voiceFile, setVoiceFile] = useState<File | null>(null);
   const [voiceSwapUrl, setVoiceSwapUrl] = useState<string | null>(null);
   const [isSwapping, setIsSwapping] = useState(false);
@@ -52,32 +31,19 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
   const voiceSwapIntervalRef = useRef<number | null>(null);
   const voiceSwapTimeoutRef = useRef<number | null>(null);
 
-  // Tools state: musicGen
   const [musicPrompt, setMusicPrompt] = useState("");
   const [stemFile, setStemFile] = useState<File | null>(null);
   const [musicGenUrl, setMusicGenUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  // Pre-session mode selection
-  const [preMode, setPreMode] = useState<"chat" | "swap" | "generate">("chat");
-
-  // Cowriter first name personalization
-  const cowriterFirstName = useMemo(() => {
-    if (selectedArtists && selectedArtists.length > 0) {
-      const guess = selectedArtists[0].trim().split(/\s+/)[0];
-      if (guess) return guess;
-    }
-    // Fallback for now as requested
-    return "Joel";
-  }, [selectedArtists]);
   const [musicGenProgress, setMusicGenProgress] = useState(0);
   const musicGenIntervalRef = useRef<number | null>(null);
   const musicGenTimeoutRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [log]);
+  const [preMode, setPreMode] = useState<"chat" | "swap" | "generate">("chat");
+  const cowriterFirstName = useMemo(() => activeModel?.firstName ?? "Joel", [activeModel]);
+  const voiceLabel = useMemo(() => activeModel?.voiceName ?? cowriterFirstName, [activeModel, cowriterFirstName]);
 
-  // Cleanup timers on unmount
+  useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [log]);
   useEffect(() => {
     return () => {
       if (voiceSwapIntervalRef.current) window.clearInterval(voiceSwapIntervalRef.current);
@@ -87,45 +53,48 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
     };
   }, []);
 
+  const setSessionStatus = (next: SessionStatus) => {
+    setSessionStatusState(next);
+    onSessionStatusChange?.(next);
+  };
+
   const appendLog = (entry: Omit<(typeof log)[number], "ts">) => {
     setLog((prev) => [...prev, { ...entry, ts: Date.now() }]);
   };
 
   const connectSession = async () => {
-    if (!selectedModel) {
-      toast({ title: "Select a model", description: "Choose an M.E. model to start." });
+    if (!activeModel) {
+      toast({ title: "Model unavailable", description: "This session requires a featured M.E. model." });
       return;
     }
+
     setSessionStatus("connecting");
-    // Minimal pre-session context summary
     const prep: string[] = [];
     if (preMode === "swap" && voiceFile) prep.push(`vocal stem: ${voiceFile.name}`);
-    if (preMode === "generate" && musicPrompt.trim()) prep.push(`music prompt: "${musicPrompt.slice(0, 60)}${musicPrompt.length > 60 ? "…" : ""}"`);
+    if (preMode === "generate" && musicPrompt.trim()) prep.push(`music prompt: "${musicPrompt.slice(0, 60)}${musicPrompt.length > 60 ? "..." : ""}"`);
     if (preMode === "generate" && stemFile) prep.push(`stem: ${stemFile.name}`);
     if (prep.length) appendLog({ role: "user", text: `Starting with ${preMode}: ${prep.join("; ")}` });
-    appendLog({ role: "system", text: `Connecting to LiveKit room for ${selectedModel.name}...` });
-    // Simulate network join + token fetch
-    setTimeout(() => {
-      const id = `room_${Math.random().toString(36).slice(2, 8)}`;
-      setRoomId(id);
-      setSessionStatus("connected");
-      appendLog({ role: "system", text: `Connected to LiveKit (${id}). Co-writer is ready.` });
+    appendLog({ role: "system", text: `Connecting to LiveKit room for ${activeModel.displayName}...` });
 
-      // Tailored greeting based on chosen mode
+    setTimeout(() => {
+      const room = `room_${Math.random().toString(36).slice(2, 8)}`;
+      setRoomId(room);
+      setSessionStatus("connected");
+      appendLog({ role: "system", text: `Connected to LiveKit (${room}). Co-writer is ready.` });
+
       const shouldSwap = preMode === "swap" && !!voiceFile;
       const shouldGen = preMode === "generate" && !!musicPrompt.trim();
       if (shouldSwap) {
-        appendLog({ role: "agent", text: "I'm digging this stem you've got—here's how I'd sing it." });
+        appendLog({ role: "agent", text: "I'm digging this stem you've got - here's how I'd sing it." });
       } else if (shouldGen) {
-        appendLog({ role: "agent", text: "That's a great idea for a track—let me create something that fits." });
+        appendLog({ role: "agent", text: "That's a great idea for a track - let me create something that fits." });
       } else {
-        appendLog({ role: "agent", text: `Hey! I'm using voice ${selectedModel.voiceName}. Let's jam—what should we explore?` });
+        appendLog({ role: "agent", text: `Hey! I'm using voice ${voiceLabel}. Let's jam - what should we explore?` });
       }
-      toast({ title: "Session connected", description: `LiveKit room ${id}` });
+      toast({ title: "Session connected", description: `LiveKit room ${room}` });
 
-      // Auto-run based on selected mode
-      if (shouldSwap) simulateVoiceSwap();
-      if (shouldGen) simulateMusicGen();
+      if (shouldSwap) setTimeout(() => simulateVoiceSwap(), 50);
+      if (shouldGen) setTimeout(() => simulateMusicGen(), 50);
     }, 900);
   };
 
@@ -138,27 +107,20 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
       toast({ title: "No vocal stem", description: "Upload a vocal stem to swap.", variant: "destructive" });
       return;
     }
+
     setIsSwapping(true);
     setVoiceSwapProgress(0);
     appendLog({ role: "user", text: `Uploaded vocal stem: ${voiceFile.name}` });
-    appendLog({ role: "agent", text: `Calling tool: voiceSwap -> voice=${selectedModel?.voiceName}` });
-    // Simulate progressive processing + API call
-    voiceSwapIntervalRef.current = window.setInterval(() => {
-      setVoiceSwapProgress((p) => {
-        const next = Math.min(p + Math.random() * 12 + 6, 92);
-        return next;
-      });
-    }, 180);
+    appendLog({ role: "agent", text: `Calling tool: voiceSwap -> voice=${voiceLabel}` });
 
+    voiceSwapIntervalRef.current = window.setInterval(() => setVoiceSwapProgress((p) => Math.min(p + Math.random() * 12 + 6, 92)), 180);
     voiceSwapTimeoutRef.current = window.setTimeout(() => {
       if (voiceSwapIntervalRef.current) window.clearInterval(voiceSwapIntervalRef.current);
       setVoiceSwapProgress(100);
-      const blob = new Blob([
-        `Simulated swapped audio for ${voiceFile.name} -> voice ${selectedModel?.voiceName}`,
-      ], { type: "audio/wav" });
+      const blob = new Blob([`Simulated swapped audio for ${voiceFile.name} -> voice ${voiceLabel}`], { type: "audio/wav" });
       const url = URL.createObjectURL(blob);
       setVoiceSwapUrl(url);
-      appendLog({ role: "tool", text: "voiceSwap ✓ Produced swapped_vocals.wav (simulated)" });
+      appendLog({ role: "tool", text: "voiceSwap produced swapped_vocals.wav (simulated)" });
       toast({ title: "Voice swapped", description: "Swapped vocals are ready (simulated)." });
       setIsSwapping(false);
     }, 2400);
@@ -183,26 +145,20 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
       toast({ title: "Prompt required", description: "Describe what to generate.", variant: "destructive" });
       return;
     }
+
     setIsGenerating(true);
     setMusicGenProgress(0);
     appendLog({ role: "user", text: `Prompt: ${musicPrompt}${stemFile ? ` (with stem: ${stemFile.name})` : ""}` });
     appendLog({ role: "agent", text: "Calling tool: musicGen -> generating track..." });
-    musicGenIntervalRef.current = window.setInterval(() => {
-      setMusicGenProgress((p) => {
-        const next = Math.min(p + Math.random() * 10 + 5, 95);
-        return next;
-      });
-    }, 160);
 
+    musicGenIntervalRef.current = window.setInterval(() => setMusicGenProgress((p) => Math.min(p + Math.random() * 10 + 5, 95)), 160);
     musicGenTimeoutRef.current = window.setTimeout(() => {
       if (musicGenIntervalRef.current) window.clearInterval(musicGenIntervalRef.current);
       setMusicGenProgress(100);
-      const blob = new Blob([
-        `Simulated music for prompt: ${musicPrompt}\nStem: ${stemFile?.name ?? "none"}`,
-      ], { type: "audio/wav" });
+      const blob = new Blob([`Simulated music for prompt: ${musicPrompt}\nStem: ${stemFile?.name ?? "none"}`], { type: "audio/wav" });
       const url = URL.createObjectURL(blob);
       setMusicGenUrl(url);
-      appendLog({ role: "tool", text: "musicGen ✓ Produced track.wav (simulated)" });
+      appendLog({ role: "tool", text: "musicGen produced track.wav (simulated)" });
       toast({ title: "Track ready", description: "Music generation completed (simulated)." });
       setIsGenerating(false);
     }, 3000);
@@ -218,8 +174,6 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
     toast({ title: "Cancelled", description: "Music generation cancelled." });
   };
 
-  const hasPrep = (preMode === "swap" && !!voiceFile) || (preMode === "generate" && !!musicPrompt.trim());
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -228,33 +182,10 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
         </div>
         <div>
           <h2 className="text-2xl font-bold text-foreground">Co-Writing Session</h2>
-          <p className="text-sm text-muted-foreground">Prepare inputs, connect, and let the agent take it from there.</p>
+          <p className="text-sm text-muted-foreground">Prepare inputs, connect, and let {cowriterFirstName} take it from there.</p>
         </div>
       </div>
 
-      <Card className="p-4 border-primary/20 bg-primary/5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Mic className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Available M.E. Model:</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {mockModels.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setSelectedModelId(m.id)}
-                className={`px-3 py-1.5 rounded-md text-sm border ${
-                  selectedModelId === m.id ? "border-primary text-primary bg-primary/10" : "border-border text-foreground"
-                }`}
-              >
-                {m.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* Choose How To Start */}
       <Card className="p-4 border-border/50 bg-card/50">
         <div className="flex items-center gap-3 mb-3">
           <Sparkles className="w-4 h-4 text-primary" />
@@ -264,9 +195,7 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
           <button
             aria-pressed={preMode === "swap"}
             onClick={() => setPreMode("swap")}
-            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${
-              preMode === "swap" ? "border-primary bg-primary/10" : "border-border"
-            }`}
+            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${preMode === "swap" ? "border-primary bg-primary/10" : "border-border"}`}
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-md bg-primary/15 flex items-center justify-center">
@@ -282,9 +211,7 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
           <button
             aria-pressed={preMode === "generate"}
             onClick={() => setPreMode("generate")}
-            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${
-              preMode === "generate" ? "border-primary bg-primary/10" : "border-border"
-            }`}
+            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${preMode === "generate" ? "border-primary bg-primary/10" : "border-border"}`}
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-md bg-primary/15 flex items-center justify-center">
@@ -300,30 +227,23 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
           <button
             aria-pressed={preMode === "chat"}
             onClick={() => setPreMode("chat")}
-            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${
-              preMode === "chat" ? "border-primary bg-primary/10" : "border-border"
-            }`}
+            className={`text-left rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-primary/50 hover:bg-muted/50 ${preMode === "chat" ? "border-primary bg-primary/10" : "border-border"}`}
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-md bg-primary/15 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-primary" />
               </div>
               <div className="space-y-1">
-                <div className="text-sm font-semibold">Just jump in with {cowriterFirstName}</div>
-                <div className="text-xs text-muted-foreground">Connect now and start co‑writing live.</div>
+                <div className="text-sm font-semibold">Jump straight in with {cowriterFirstName}</div>
+                <div className="text-xs text-muted-foreground">Connect now and riff together live.</div>
               </div>
             </div>
           </button>
         </div>
 
-        {/* Contextual inputs */}
         {preMode === "swap" && (
           <div className="mt-3 space-y-2">
-            <Input
-              type="file"
-              accept="audio/*"
-              onChange={(e) => setVoiceFile(e.target.files?.[0] ?? null)}
-            />
+            <Input type="file" accept="audio/*" onChange={(e) => setVoiceFile(e.target.files?.[0] ?? null)} />
             {voiceFile ? (
               <Badge variant="outline" className="truncate max-w-[16rem]" title={voiceFile.name}>
                 Vocal: {voiceFile.name}
@@ -344,11 +264,7 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
               className="resize-none"
             />
             <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => setStemFile(e.target.files?.[0] ?? null)}
-              />
+              <Input type="file" accept="audio/*" onChange={(e) => setStemFile(e.target.files?.[0] ?? null)} />
               {stemFile && (
                 <Badge variant="outline" className="truncate max-w-[12rem]" title={stemFile.name}>
                   Stem: {stemFile.name}
@@ -362,16 +278,13 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
       <Card className="p-4 border-border/50 bg-card/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className={sessionStatus === "connected" ? "border-green-500 text-green-600" : sessionStatus === "connecting" ? "border-yellow-500 text-yellow-600" : ""}
-            >
+            <Badge variant="outline" className={sessionStatus === "connected" ? "border-green-500 text-green-600" : sessionStatus === "connecting" ? "border-yellow-500 text-yellow-600" : "border-border/60 text-muted-foreground"}>
               {sessionStatus === "connected" ? "Connected" : sessionStatus === "connecting" ? "Connecting" : "Idle"}
             </Badge>
             {roomId && <span className="text-xs text-muted-foreground">Room: {roomId}</span>}
           </div>
           <div className="flex gap-2">
-            <Button onClick={connectSession} disabled={sessionStatus !== "idle" || !selectedModel}>
+            <Button onClick={connectSession} disabled={sessionStatus !== "idle"}>
               {sessionStatus === "connecting" ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -384,129 +297,88 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
                 </>
               )}
             </Button>
-            {!selectedModel && onArtistSearch && (
-              <Button variant="outline" onClick={onArtistSearch}>
-                <User className="w-4 h-4 mr-2" />
-                Add Model
-              </Button>
-            )}
           </div>
         </div>
       </Card>
 
-      {/* Tools */}
       {sessionStatus === "connected" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* MusicGen Tool */}
-        <Card className="p-4 border-border/50 bg-card/50">
-          <div className="flex items-center gap-2 mb-3">
-            <Music className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold">musicGen</h3>
-            <span className="text-xs text-muted-foreground">Text to Music, optional stem</span>
-          </div>
-          <div className="space-y-3">
-            <Textarea
-              placeholder="Describe the vibe, structure, and mood..."
-              value={musicPrompt}
-              onChange={(e) => setMusicPrompt(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => setStemFile(e.target.files?.[0] ?? null)}
-              />
-              {stemFile && (
-                <Badge variant="outline" className="truncate max-w-[12rem]" title={stemFile.name}>
-                  Stem: {stemFile.name}
+          <Card className="p-4 border-border/50 bg-card/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Music className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">musicGen</h3>
+              <span className="text-xs text-muted-foreground">Text to music, optional stem</span>
+            </div>
+            <div className="space-y-3">
+              <Textarea placeholder="Describe the vibe, structure, and mood..." value={musicPrompt} onChange={(e) => setMusicPrompt(e.target.value)} rows={4} className="resize-none" />
+              <div className="flex items-center gap-2">
+                <Input type="file" accept="audio/*" onChange={(e) => setStemFile(e.target.files?.[0] ?? null)} />
+                {stemFile && (
+                  <Badge variant="outline" className="truncate max-w-[12rem]" title={stemFile.name}>
+                    Stem: {stemFile.name}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={simulateMusicGen} disabled={isGenerating}>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 mr-2" /> Generate
+                    </>
+                  )}
+                </Button>
+                {isGenerating && (<Button variant="outline" onClick={cancelMusicGen}>Cancel</Button>)}
+                {musicGenUrl && (<a href={musicGenUrl} download="track.wav" className="text-sm underline text-primary">Download .wav (sim)</a>)}
+              </div>
+              {isGenerating && (
+                <div className="pt-1">
+                  <Progress value={musicGenProgress} />
+                </div>
+              )}
+              {musicGenUrl && (<audio src={musicGenUrl} controls className="w-full" />)}
+            </div>
+          </Card>
+
+          <Card className="p-4 border-border/50 bg-card/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Mic className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">voiceSwap</h3>
+              <span className="text-xs text-muted-foreground">Swap uploaded vocals to {voiceLabel}</span>
+            </div>
+            <div className="space-y-3">
+              <Input type="file" accept="audio/*" onChange={(e) => setVoiceFile(e.target.files?.[0] ?? null)} />
+              {voiceFile && (
+                <Badge variant="outline" className="truncate max-w-[16rem]" title={voiceFile.name}>
+                  Vocal: {voiceFile.name}
                 </Badge>
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={simulateMusicGen} disabled={isGenerating || sessionStatus !== "connected"}>
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" /> Generate
-                  </>
-                )}
-              </Button>
-              {isGenerating && (
-                <Button variant="outline" onClick={cancelMusicGen}>Cancel</Button>
-              )}
-              {musicGenUrl && (
-                <a href={musicGenUrl} download="track.wav" className="text-sm underline text-primary">
-                  Download .wav (sim)
-                </a>
-              )}
-              
-            </div>
-            {isGenerating && (
-              <div className="pt-1">
-                <Progress value={musicGenProgress} />
+              <div className="flex items-center gap-2">
+                <Button onClick={simulateVoiceSwap} disabled={isSwapping}>
+                  {isSwapping ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Swapping
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 mr-2" /> Swap Voice
+                    </>
+                  )}
+                </Button>
+                {isSwapping && (<Button variant="outline" onClick={cancelVoiceSwap}>Cancel</Button>)}
+                {voiceSwapUrl && (<a href={voiceSwapUrl} download="swapped_vocals.wav" className="text-sm underline text-primary">Download .wav (sim)</a>)}
               </div>
-            )}
-            {musicGenUrl && (
-              <audio src={musicGenUrl} controls className="w-full" />
-            )}
-          </div>
-        </Card>
-
-        {/* VoiceSwap Tool */}
-        <Card className="p-4 border-border/50 bg-card/50">
-          <div className="flex items-center gap-2 mb-3">
-            <Mic className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold">voiceSwap</h3>
-            <span className="text-xs text-muted-foreground">Swap uploaded vocals to {selectedModel?.voiceName ?? "model"}</span>
-          </div>
-          <div className="space-y-3">
-            <Input
-              type="file"
-              accept="audio/*"
-              onChange={(e) => setVoiceFile(e.target.files?.[0] ?? null)}
-            />
-            {voiceFile && (
-              <Badge variant="outline" className="truncate max-w-[16rem]" title={voiceFile.name}>
-                Vocal: {voiceFile.name}
-              </Badge>
-            )}
-            <div className="flex items-center gap-2">
-              <Button onClick={simulateVoiceSwap} disabled={isSwapping || sessionStatus !== "connected"}>
-                {isSwapping ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Swapping
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" /> Swap Voice
-                  </>
-                )}
-              </Button>
               {isSwapping && (
-                <Button variant="outline" onClick={cancelVoiceSwap}>Cancel</Button>
+                <div className="pt-1">
+                  <Progress value={voiceSwapProgress} />
+                </div>
               )}
-              {voiceSwapUrl && (
-                <a href={voiceSwapUrl} download="swapped_vocals.wav" className="text-sm underline text-primary">
-                  Download .wav (sim)
-                </a>
-              )}
-              
+              {voiceSwapUrl && (<audio src={voiceSwapUrl} controls className="w-full" />)}
             </div>
-            {isSwapping && (
-              <div className="pt-1">
-                <Progress value={voiceSwapProgress} />
-              </div>
-            )}
-            {voiceSwapUrl && (
-              <audio src={voiceSwapUrl} controls className="w-full" />
-            )}
-          </div>
-        </Card>
+          </Card>
         </div>
       ) : (
         <Card className="p-4 border-dashed border-border/50 bg-muted/10 text-sm text-muted-foreground">
@@ -514,18 +386,17 @@ const GenerativeStudio = ({ selectedArtists, onArtistSearch }: GenerativeStudioP
         </Card>
       )}
 
-      {/* Session Log */}
       <Card className="p-4 border-border/50 bg-muted/30">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold">Session Log</h3>
         </div>
         <div className="h-40 overflow-auto rounded-md bg-background border border-border/50 p-2 text-xs space-y-1">
-          {log.map((l, i) => (
-            <div key={i} className="flex gap-2">
-              <span className="text-muted-foreground">[{new Date(l.ts).toLocaleTimeString()}]</span>
-              <span className="uppercase text-muted-foreground">{l.role}:</span>
-              <span className="whitespace-pre-wrap">{l.text}</span>
+          {log.map((entry, idx) => (
+            <div key={idx} className="flex gap-2">
+              <span className="text-muted-foreground">[{new Date(entry.ts).toLocaleTimeString()}]</span>
+              <span className="uppercase text-muted-foreground">{entry.role}:</span>
+              <span className="whitespace-pre-wrap">{entry.text}</span>
             </div>
           ))}
           <div ref={logEndRef} />
