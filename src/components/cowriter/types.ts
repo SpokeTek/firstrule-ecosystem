@@ -66,3 +66,15 @@ export interface FileAsset {
   uploadedAt: string;
   url?: string;
 }
+
+export interface CowriterModelProfile {
+  id: string;
+  displayName: string;
+  title: string;
+  firstName: string;
+  bio: string;
+  voiceName: string;
+  previewUrl?: string;
+  stats?: Array<{ label: string; value: string }>;
+  badges?: string[];
+}
