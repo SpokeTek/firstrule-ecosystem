@@ -29,12 +29,11 @@ import ArtistSearch from "@/components/cowriter/ArtistSearch";
 import SessionWorkspace from "@/components/cowriter/SessionWorkspace";
 import ActiveSessions from "@/components/cowriter/ActiveSessions";
 import GenerativeStudio from "@/components/cowriter/GenerativeStudio";
-import ModelSelector from "@/components/cowriter/ModelSelector";
 import SyncStageIntegration from "@/components/cowriter/SyncStageIntegration";
-import TrainingDataCapture from "@/components/cowriter/TrainingDataCapture";
+import ModelSpotlight from "@/components/cowriter/ModelSpotlight";
 import { AudioAnalyzer } from "@/components/cowriter/AudioAnalyzer";
 import { createOpenPlayClient, OpenPlayAPI } from "@/integrations/openplay/OpenPlayAPI";
-import { Artist, Session } from "@/components/cowriter/types";
+import { Artist, Session, CowriterModelProfile } from "@/components/cowriter/types";
 
 
 const CoWriter = () => {
@@ -45,7 +44,23 @@ const CoWriter = () => {
   const [isLoadingAPI, setIsLoadingAPI] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [cowriterStatus, setCowriterStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
+
+  const featuredModel: CowriterModelProfile = {
+    id: "me-joel",
+    displayName: "Joel Kaiser",
+    title: "Vocal Essence v1",
+    firstName: "Joel",
+    bio: "Soulful Nashville-born vocalist with rich lyricism and emotive phrasing. SessionChain™ verified for ethical licensing.",
+    voiceName: "Joel Kaiser",
+    previewUrl: "/assets/stems/joel-kaiser-vocal-essence-v1.mp3",
+    stats: [
+      { label: "Range", value: "C3 – A5" },
+      { label: "Influences", value: "Neo-soul, Indie, R&B" },
+      { label: "Energy", value: "Dynamic & emotive" },
+    ],
+    badges: ["SessionChain Provenance", "Ethical Licensing", "Artist Approved"],
+  };
 
   // Initialize OpenPlay API client
   useEffect(() => {
@@ -223,19 +238,13 @@ const CoWriter = () => {
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <GenerativeStudio
-                  selectedArtists={selectedModels}
-                  onArtistSearch={() => setActiveTab('search')}
+                  activeModel={featuredModel}
+                  onSessionStatusChange={setCowriterStatus}
                 />
                 <AudioAnalyzer />
               </div>
               <div className="space-y-6">
-                <ModelSelector
-                  selectedModels={selectedModels}
-                  onModelsChange={setSelectedModels}
-                />
-                <TrainingDataCapture
-                  selectedModelId={selectedModels[0]}
-                />
+                <ModelSpotlight model={featuredModel} sessionStatus={cowriterStatus} />
                 {activeSession && (
                   <SyncStageIntegration
                     sessionId={activeSession.id}
