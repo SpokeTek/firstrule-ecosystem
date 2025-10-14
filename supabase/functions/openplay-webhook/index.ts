@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +14,56 @@ serve(async (req) => {
 
   try {
     const signature = req.headers.get('x-openplay-signature');
-    const payload = await req.json();
+    const payloadText = await req.text();
+    
+    // Verify webhook signature before processing
+    const webhookSecret = Deno.env.get('OPENPLAY_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      console.error('OPENPLAY_WEBHOOK_SECRET not configured');
+      return new Response(
+        JSON.stringify({ error: 'Webhook secret not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!signature) {
+      console.error('Missing webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Missing signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Compute expected signature using HMAC-SHA256
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(webhookSecret);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signatureData = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(payloadText)
+    );
+    const expectedSignature = Array.from(new Uint8Array(signatureData))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    // Constant-time comparison to prevent timing attacks
+    if (signature !== expectedSignature) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse payload after signature verification
+    const payload = JSON.parse(payloadText);
 
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
