@@ -51,12 +51,32 @@ const CoWriter = () => {
   useEffect(() => {
     const initializeAPI = async () => {
       try {
-        // In production, these would come from environment variables
+        // Use Supabase Edge Function as proxy to avoid CORS issues
+        // The Edge Function handles OpenPlay authentication with Basic Auth
+        // We don't need to pass OpenPlay credentials from the browser
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        
+        console.log('=== Initializing OpenPlay API ===');
+        console.log('Supabase URL:', supabaseUrl);
+        console.log('Supabase Anon Key:', supabaseAnonKey ? `${supabaseAnonKey.slice(0, 20)}...` : 'NOT SET');
+        
+        // Ensure supabaseUrl doesn't already include the function path
+        let cleanSupabaseUrl = supabaseUrl;
+        if (cleanSupabaseUrl.includes('/functions/v1')) {
+          console.warn('Supabase URL already contains /functions/v1, cleaning it up');
+          cleanSupabaseUrl = cleanSupabaseUrl.split('/functions/v1')[0];
+        }
+        
         const config = {
-          apiKey: process.env.NEXT_PUBLIC_OPENPLAY_API_KEY || 'demo-key',
-          baseUrl: process.env.NEXT_PUBLIC_OPENPLAY_BASE_URL || 'https://connect.opstaging.com/v2',
-          webhookSecret: process.env.OPENPLAY_WEBHOOK_SECRET || 'demo-secret'
+          apiKey: 'handled-by-edge-function', // Not used, Edge Function has the real credentials
+          baseUrl: `${cleanSupabaseUrl}/functions/v1/openplay-proxy`,
+          webhookSecret: import.meta.env.VITE_OPENPLAY_WEBHOOK_SECRET || 'demo-secret',
+          supabaseAnonKey
         };
+        
+        console.log('Clean Supabase URL:', cleanSupabaseUrl);
+        console.log('Config baseUrl:', config.baseUrl);
 
         const apiClient = createOpenPlayClient(config);
         setOpenPlayAPI(apiClient);

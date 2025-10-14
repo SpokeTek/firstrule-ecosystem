@@ -6,8 +6,10 @@
 
 export interface OpenPlayConfig {
   apiKey: string;
+  apiSecret?: string; // Optional, not used for Bearer auth
   baseUrl: string;
   webhookSecret?: string;
+  supabaseAnonKey?: string; // For authenticating with Supabase Edge Functions
 }
 
 export interface Artist {
@@ -66,38 +68,79 @@ export class OpenPlayAPI {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    console.log(`=== OpenPlayAPI.makeRequest ===`);
+    console.log(`baseUrl: ${this.config.baseUrl}`);
+    console.log(`endpoint: ${endpoint}`);
+    
     const url = `${this.config.baseUrl}${endpoint}`;
+    const isUsingProxy = url.includes('/functions/v1/');
+    
+    console.log(`Final URL: ${url}`);
+    console.log(`Using Supabase Edge Function proxy: ${isUsingProxy}`);
 
     // Check rate limiting
     if (this.rateLimitRemaining <= 1 && Date.now() < this.rateLimitReset) {
       await new Promise(resolve => setTimeout(resolve, this.rateLimitReset - Date.now()));
     }
-
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
+    
+    try {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+        ...options.headers as Record<string, string>,
+      };
 
-    // Update rate limit info from headers
-    const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
-    const rateLimitReset = response.headers.get('x-ratelimit-reset');
+      // If using Supabase Edge Function proxy, only send the Supabase anon key
+      // The Edge Function will handle OpenPlay authentication
+      if (isUsingProxy && this.config.supabaseAnonKey) {
+        headers['apikey'] = this.config.supabaseAnonKey;
+        headers['Authorization'] = `Bearer ${this.config.supabaseAnonKey}`; // Supabase also needs this
+        console.log(`Using Edge Function proxy - auth handled server-side`);
+        console.log(`Supabase anon key (first 20): ${this.config.supabaseAnonKey.slice(0, 20)}...`);
+      } else {
+        // Direct API call - use Bearer token (not used in current setup)
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+        console.log(`Direct API call with Bearer token`);
+      }
+      
+      console.log(`Request headers:`, Object.keys(headers));
+      console.log(`Headers being sent:`, headers);
 
-    if (rateLimitRemaining) {
-      this.rateLimitRemaining = parseInt(rateLimitRemaining);
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      console.log(`Response status: ${response.status} ${response.statusText}`);
+      console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+
+      // Update rate limit info from headers
+      const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+      const rateLimitReset = response.headers.get('x-ratelimit-reset');
+
+      if (rateLimitRemaining) {
+        this.rateLimitRemaining = parseInt(rateLimitRemaining);
+      }
+      if (rateLimitReset) {
+        this.rateLimitReset = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API Error Response:`, errorText);
+        throw new Error(`OpenPlay API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`Response data:`, data);
+      return data;
+    } catch (error) {
+      console.error(`Fetch error:`, error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error(`This is likely a CORS issue. The browser is blocking the request.`);
+        console.error(`Check if the API server allows requests from ${window.location.origin}`);
+      }
+      throw error;
     }
-    if (rateLimitReset) {
-      this.rateLimitReset = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
-    }
-
-    if (!response.ok) {
-      throw new Error(`OpenPlay API error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
   }
 
   // Artists
@@ -109,9 +152,33 @@ export class OpenPlayAPI {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', params.page.toString());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.search) searchParams.set('search', params.search);
+    // OpenPlay uses 'filters[name]' for filtering by artist name
+    // The search term should be URL encoded (URLSearchParams handles this automatically)
+    if (params?.search) {
+      const encodedSearch = params.search.trim();
+      searchParams.set('filters[name]', encodedSearch);
+      console.log(`Search params: ${searchParams.toString()}`);
+    }
 
-    return this.makeRequest(`/artists?${searchParams.toString()}`);
+    const response = await this.makeRequest<{
+      results: Array<{ id: number; name: string; [key: string]: any }>;
+      current_page: number;
+      total_results: number;
+      result_range: string;
+    }>(`/artists/?${searchParams.toString()}`);
+
+    // Transform OpenPlay API response to our expected format
+    return {
+      artists: response.results.map(result => ({
+        id: result.id.toString(),
+        name: result.name,
+        externalIds: {},
+        metadata: result
+      })),
+      total: response.total_results,
+      page: response.current_page,
+      limit: params?.limit || 50
+    };
   }
 
   async getArtist(id: string): Promise<Artist> {

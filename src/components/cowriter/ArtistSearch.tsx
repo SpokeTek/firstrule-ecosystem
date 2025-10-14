@@ -141,11 +141,14 @@ const ArtistSearch: React.FC<ArtistSearchProps> = ({ openPlayAPI, onArtistSelect
 
       try {
         if (openPlayAPI && searchQuery.trim()) {
+          console.log(`Searching for artists with query: ${searchQuery.trim()}`);
           // Use real OpenPlay API
           const result = await openPlayAPI.getArtists({
             search: searchQuery.trim(),
             limit: 20
           });
+
+          console.log(`Result: ${JSON.stringify(result)}`);
 
           // Transform OpenPlay artists to our interface
           const transformedArtists: Artist[] = result.artists.map((openplayArtist: OpenPlayArtist) => ({

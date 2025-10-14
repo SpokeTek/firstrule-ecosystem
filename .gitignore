@@ -24,7 +24,6 @@ dist-ssr
 *.sw?
 
 # Environments
-.env
 .env.local
 .env.development
 .env.production
@@ -36,3 +35,4 @@ dist-ssr
 .env.test.test.local
 .env.test.test.development
 .env.test.test.production
+.env
