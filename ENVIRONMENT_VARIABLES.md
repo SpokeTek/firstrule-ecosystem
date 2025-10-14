@@ -1,82 +1,93 @@
-# Required Environment Variables
+# Environment Variables Guide
 
-This document lists all environment variables needed for the FirstRule Ecosystem application.
+This document explains the environment variable configuration for the FirstRule Ecosystem application.
 
-## Supabase Configuration (Required)
+## ⚠️ Security Note
 
-These are **required** for the app to function:
+**CRITICAL**: The `.env` file is automatically managed by Lovable Cloud and should NEVER be manually edited. It only contains public VITE_ prefixed variables that are safe to expose in the browser.
+
+All sensitive credentials (API keys, secrets, tokens) MUST be stored in Lovable Cloud secrets, NOT in the `.env` file or codebase.
+
+## Automatic Configuration (Lovable Cloud)
+
+These variables are automatically configured by Lovable Cloud:
 
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key_here
+VITE_SUPABASE_PROJECT_ID=your_project_id
 ```
 
-**How to get these:**
-1. Go to your Supabase project dashboard
-2. Click on "Project Settings" (gear icon)
-3. Go to "API" section
-4. Copy:
-   - **Project URL** → `VITE_SUPABASE_URL`
-   - **Project API keys** → **anon/public** key → `VITE_SUPABASE_PUBLISHABLE_KEY`
+**You do NOT need to set these manually.** They are automatically injected by the platform.
 
-## OpenPlay API Configuration (Optional for local testing)
+## Required Secrets (Lovable Cloud Secrets Management)
 
-These are handled by the Supabase Edge Function in production, but can be set for reference:
+The following secrets are required and should be configured using Lovable Cloud's secrets management:
+
+### OpenPlay API Credentials
 
 ```bash
-VITE_OPENPLAY_WEBHOOK_SECRET=your_webhook_secret_here
+OPENPLAY_API_KEY_ID=your_api_key_id
+OPENPLAY_API_SECRET=your_api_secret
+OPENPLAY_BASE_URL=https://newwest.opstaging.com/connect/v2
+OPENPLAY_WEBHOOK_SECRET=your_webhook_secret
 ```
 
-## Supabase Edge Function Secrets (Production)
+**How to add secrets:**
+1. Click on the secrets management button in Lovable
+2. Add each secret with its name and value
+3. Secrets are automatically encrypted and available to edge functions via `Deno.env.get('SECRET_NAME')`
 
-These must be set in Supabase (not in Lovable):
+### Other API Keys
+
+If you need additional API keys (OpenAI, ElevenLabs, etc.), add them through Lovable Cloud's secrets management:
 
 ```bash
-# Set these using Supabase CLI:
-supabase secrets set OPENPLAY_API_KEY_ID=your_api_key_id
-supabase secrets set OPENPLAY_API_SECRET=your_api_secret
-supabase secrets set OPENPLAY_BASE_URL=https://newwest.opstaging.com/connect/v2
+OPENAI_API_KEY=your_openai_key
+ELEVENLABS_API_KEY=your_elevenlabs_key
+# etc.
 ```
 
-## Setting Environment Variables in Lovable
+## How Secrets Work
 
-1. Go to your Lovable project
-2. Click on **Settings** or **Environment Variables**
-3. Add the following variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`
-4. Save and redeploy
+1. **Client-side (browser)**: Only `VITE_` prefixed variables from `.env` are available via `import.meta.env.VITE_*`
+2. **Server-side (edge functions)**: All secrets are available via `Deno.env.get('SECRET_NAME')`
 
-## Local Development
+## Security Best Practices
 
-Create a `.env` file in your project root:
+✅ **DO:**
+- Store all sensitive credentials in Lovable Cloud secrets
+- Use VITE_ prefix only for truly public values (like Supabase publishable key)
+- Rotate credentials immediately if they are exposed
+- Use webhook signature verification for all incoming webhooks
 
-```bash
-cp .env.example .env
-```
-
-Then edit `.env` and fill in your actual values.
+❌ **DON'T:**
+- Never put API keys or secrets in the `.env` file
+- Never commit credentials to git
+- Never expose service role keys in client-side code
+- Never skip webhook signature verification
 
 ## Troubleshooting
 
 ### "supabaseUrl is required" Error
 
-This means `VITE_SUPABASE_URL` is not set in your environment. Make sure:
-- The variable is set in Lovable's environment variables
-- The variable name is exactly `VITE_SUPABASE_URL` (case-sensitive)
-- You've redeployed after adding the variable
+This means Lovable Cloud hasn't properly injected the environment variables. Solutions:
+1. Ensure Lovable Cloud is properly connected
+2. Trigger a fresh deployment
+3. Check that you haven't manually edited the `.env` file
 
-### OpenPlay API Not Working
+### Edge Function Can't Access Secrets
 
-If the OpenPlay integration isn't working:
-1. Check that the Supabase Edge Function is deployed: `supabase functions deploy openplay-proxy`
-2. Verify the secrets are set: `supabase secrets list`
-3. Check Edge Function logs: `supabase functions logs openplay-proxy --tail`
+Make sure:
+1. The secret is added via Lovable Cloud secrets management
+2. You're using `Deno.env.get('SECRET_NAME')` (exact name match)
+3. The edge function has been redeployed after adding the secret
 
-## Security Notes
+## Migration Note
 
-- **Never commit** `.env` files to git
-- The `.env.example` file should only contain placeholder values
-- Supabase anon key is safe to expose (it's public)
-- OpenPlay credentials should only be in Supabase Edge Function secrets (server-side)
+If you previously had credentials in the `.env` file:
+1. **Remove them from `.env` immediately**
+2. **Add them to Lovable Cloud secrets**
+3. **Rotate the credentials at the service provider**
+4. Update edge functions to use `Deno.env.get()` instead of `import.meta.env`
 

@@ -295,6 +295,13 @@ export type Database = {
             referencedRelation: "artists"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "me_models_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "public_artist_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       model_provenance: {
@@ -1002,6 +1009,66 @@ export type Database = {
       }
     }
     Views: {
+      public_artist_profiles: {
+        Row: {
+          artist_name: string | null
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          identity_verified: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_name?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          identity_verified?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_name?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          identity_verified?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      public_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       voice_model_commercial_summary: {
         Row: {
           latest_release_date: string | null
