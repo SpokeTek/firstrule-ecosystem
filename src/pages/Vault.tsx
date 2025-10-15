@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, Shield, X, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Vault = () => {
